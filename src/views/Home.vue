@@ -126,6 +126,11 @@ function getDate(mode) {
   return date;
 }
 
+// 去掉字符串中的所有空白字符
+function trim(str) {
+  return str.replace(/\s+/g, "");
+}
+
 export default {
   data() {
     return {
@@ -278,6 +283,7 @@ export default {
       self.freeze = true;
       if (self.currentReservationObj == null) {
         self.$alert("当前无有效预约");
+        self.freeze = false;
       } else {
         let preStartTime = self.currentReservationObj.begin; // 当前的开始时间
 
@@ -285,6 +291,10 @@ export default {
         let endTime = libraryConfig.timeMap[self.currentReservationObj.end]; //结束时间
         let seat = self.currentReservationObj.seatId; // 座位id
         let date = getDate(1); // 今天的年-月-日字符串
+
+        console.log(self.currentReservationObj);
+
+        console.log(preStartTime, startTime, endTime);
 
         if (!(startTime < endTime)) {
           // 防止startTime和endTime都为undefined导致异常
@@ -308,7 +318,9 @@ export default {
               const reserveAPI = `/rest/v2/freeBook`;
 
               // const res = await self.$http.post(reserveAPI, delayInfo);
-
+              
+              console.log(delayInfo);
+              
               const res = await self.$http({
                 method: "post",
                 url: reserveAPI,
@@ -318,7 +330,12 @@ export default {
               console.log("delayRes:", res.data);
               const resData = res.data;
               if (resData.status == "success") {
+                let seatId = self.currentReservationObj.seatId;
                 self.currentReservationObj = resData.data;
+                // 去掉返回的obj里begin和end中间的空格
+                self.currentReservationObj.begin = trim(self.currentReservationObj.begin);
+                self.currentReservationObj.end = trim(self.currentReservationObj.end);
+                self.currentReservationObj.seatId = seatId;
                 let {
                   location,
                   onDate,
@@ -412,7 +429,13 @@ export default {
           console.log(resData);
 
           if (resData.status == "success") {
-            self.currentReservationObj = resData.data;
+            // let seatId = self.currentReservationObj.seatId;
+            // self.currentReservationObj = resData.data;
+            // self.currentReservationObj.begin = trim(self.currentReservationObj.begin);
+            // self.currentReservationObj.end = trim(self.currentReservationObj.end);
+            // self.currentReservationObj.seatId = seatId;
+            await self.getCurrentReservation();
+
             let { location, onDate, begin, end } = self.currentReservationObj;
             self.currentReservationStr = `日期：${onDate},地点：${location},从${begin}到${end}`;
             self.$alert(`预约成功`);
@@ -420,6 +443,8 @@ export default {
             self.$alert(`预约失败:${resData.message}`);
           }
         } catch (err) {
+          console.log(err);
+          
           self.$alert("网络错误，请稍后再试", "失败");
         }
       }
