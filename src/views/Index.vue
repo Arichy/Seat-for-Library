@@ -32,8 +32,25 @@ export default {
   },
 
   methods: {
-    async login() {
+    // 冰冻页面
+    getfreeze(){
       self.freeze = true;
+      
+      return self.$loading({text:'正在登陆...'});
+    },
+
+    // 解冻页面
+    unfreeze(loadingInstance){
+      self.freeze = false;
+      self.$nextTick(()=>{
+        loadingInstance && loadingInstance.close();
+      });
+    },
+
+    async login() {
+      // self.freeze = true;
+      let loading = self.getfreeze();
+
       let username = self.username || "2016301500173";
       let password = self.password;
 
@@ -51,19 +68,23 @@ export default {
 
         if (resData.code == "10") {
           self.$alert("系统维护，请稍后再试", "登陆失败");
-          self.freeze = false;
+          // self.freeze = false;
+          self.unfreeze(loading);
         } else if (!token) {
           self.$alert("密码不正确，请重新输入", "登录失败");
           self.freeze = false;
+          self.unfreeze(loading);
         } else {
           self.$router.push({
             name: "home",
             query: { token, username }
           });
+          self.unfreeze(loading);
         }
       } catch (err) {
         self.$alert("网络错误，请稍后再试", "登录失败");
-        self.freeze = false;
+        // self.freeze = false;
+        self.unfreeze(loading);
       }
 
     }
