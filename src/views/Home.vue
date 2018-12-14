@@ -421,7 +421,7 @@ export default {
                   // 3：座位被别人抢了。这是self.status==='正在抢座位...'
                   if (resData.message.startsWith("系统")) {
                     // 1
-                    self.consoleInfo = resData.data;
+                    self.consoleInfo = resData.msg;
                   } else if (!resData.message.startsWith("已有")) {
                     // 3
                     self.status = "抢座位失败";

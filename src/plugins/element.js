@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import {
     Button, Input, Select, Option, Table, TableColumn, Row, Col, Container,
-    Header, Main, MessageBox,Loading
+    Header, Main, Footer,MessageBox,Loading
 } from 'element-ui';
 
 Vue.use(Button);
@@ -15,6 +15,7 @@ Vue.use(Col);
 Vue.use(Container);
 Vue.use(Header);
 Vue.use(Main);
+Vue.use(Footer);
 
 Vue.use(Loading.directive);
 Vue.prototype.$loading = Loading.service;

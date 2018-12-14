@@ -13,6 +13,10 @@
         </div>
       </div>
     </el-main>
+    <el-footer>
+      <div>Made By Yinting in 南宁大沙田 备案号:1301301300</div>
+      <div style="font-style:italic;margin-top:5px">宇宙间最人淡如菊的仙子-周阴婷<i class="yinting"></i></div>
+    </el-footer>
   </el-container>
 </template>
 
@@ -106,15 +110,23 @@ body,
 </style>
 
 <style lang="scss" scoped>
+.yinting {
+  background-image: url("../assets/img/yt.jpg");
+  background-size: 100% 100%;
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+}
 .el-container {
   // background-image: url("../assets/img/bg.jpg");
   // background-repeat: no-repeat;
   // background-size: 100% 100%;
   // background-color: red;
-  // height: 100%;
+  height: 100%;
 
   .el-header {
-    height: 100% !important;
+    // height: 100% !important;
+    height: 100px !important;
     text-align: center;
     .title {
       font-size: 24px;
@@ -140,6 +152,19 @@ body,
       }
     }
   }
+  
+  .el-footer {
+    >* {
+      text-align: center;
+    }
+    color: #8590A6;
+    font-size: 13px;
+
+    :first-child{
+      font-size:15px;
+    };
+  }
+  
 }
 </style>
 
