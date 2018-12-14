@@ -106,6 +106,21 @@ import { setInterval, clearInterval, clearImmediate } from "timers";
 let self = null;
 let token = "";
 
+// 禁止预约的座位
+let black_seatArr = [];
+for (let i = 1; i <= 92; i++) {
+  black_seatArr.push(["3", i.toString().padStart(3, "0")]);
+}
+
+function checkSeat(room, seatNum) {
+  for (const black_seat of black_seatArr) {
+    if (room == black_seat[0] && seatNum == black_seat[1]) {
+      return false;
+    }
+  }
+
+  return true;
+}
 // 每个房间的座位数量
 // let roomSeatTotalNumber = {};
 
@@ -308,28 +323,29 @@ export default {
 
     // 预约今天
     async reserveToday(reserveData) {
-        try {
-          const reserveAPI = `/rest/v2/freeBook`;
+      try {
+        const reserveAPI = `/rest/v2/freeBook`;
 
-          const res = await self.$http({
-            method: "post",
-            url: reserveAPI,
-            data: reserveData
-          });
-          const resData = res.data;
-          console.log(resData);
+        const res = await self.$http({
+          method: "post",
+          url: reserveAPI,
+          data: reserveData
+        });
+        const resData = res.data;
+        console.log(resData);
 
-          if (resData.status == "success") { // 预约成功
-            return {status:true};
-          } else {
-            return {status:false,msg:resData.message};
-          }
-        } catch (err) {
-          console.log(err);
-
-          self.$alert("网络错误，请稍后再试", "失败");
-          return {status:false};
+        if (resData.status == "success") {
+          // 预约成功
+          return { status: true };
+        } else {
+          return { status: false, msg: resData.message };
         }
+      } catch (err) {
+        console.log(err);
+
+        self.$alert("网络错误，请稍后再试", "失败");
+        return { status: false };
+      }
     },
 
     // 预约明天
@@ -343,6 +359,14 @@ export default {
         self.$alert("请检查座位号");
         self.freeze = false;
       } else {
+        
+         if(self.$route.query.username!='2016301500173' && !checkSeat(self.roomId,self.seatNum)){
+          self.$alert("该座位暂时无法预约，请选择其他座位");
+          self.freeze = false;
+
+          return;
+        }
+
         let startTime = libraryConfig.timeMap[self.startTime];
         let endTime = libraryConfig.timeMap[self.endTime];
 
@@ -412,7 +436,6 @@ export default {
                       //进入这个页面时已经有了明天的预约
                       self.consoleInfo = resData.message;
                     } else {
-                      
                     }
                   }
                 }
@@ -447,22 +470,24 @@ export default {
         // 当前无预约
         self.$alert("当前无有效预约", "提示");
         self.freeze = false;
-      } else { 
-        let success = await self.cancelCurrentReservation(self.currentReservationObj.id);
-        if(success){ // 取消成功
+      } else {
+        let success = await self.cancelCurrentReservation(
+          self.currentReservationObj.id
+        );
+        if (success) {
+          // 取消成功
           self.$alert("已成功取消当前预约");
           self.currentReservationObj = null;
           self.currentReservationStr = "";
-          
         } else {
-          self.$alert('取消失败，请稍后再试');
+          self.$alert("取消失败，请稍后再试");
         }
         self.freeze = false;
       }
     },
 
     // "预约今天"按钮的handler
-    async reserveToday_handler(){
+    async reserveToday_handler() {
       self.freeze = true;
 
       let date = getDate(1);
@@ -472,13 +497,22 @@ export default {
         self.$alert("请检查座位号");
         self.freeze = false;
       } else {
+        
+        if(self.$route.query.username!='2016301500173' && !checkSeat(self.roomId,self.seatNum)){
+          self.$alert("该座位暂时无法预约，请选择其他座位");
+          self.freeze = false;
+
+          return;
+        }
+
         let startTime = libraryConfig.timeMap[self.startTime];
         let endTime = libraryConfig.timeMap[self.endTime];
 
         let reserveData = { token, startTime, endTime, seat, date };
 
         let result = await self.reserveToday(reserveData);
-        if(result.status){ // 预约成功
+        if (result.status) {
+          // 预约成功
           await self.getCurrentReservation(); // 更新当前预约信息
 
           let { location, onDate, begin, end } = self.currentReservationObj;
@@ -490,12 +524,11 @@ export default {
           self.$alert(`预约失败:${result.msg}`);
           self.freeze = false;
         }
-
       }
     },
 
     // "延迟当前预约"按钮的handler
-    async delayCurrentReservation_handler(){
+    async delayCurrentReservation_handler() {
       self.freeze = true;
       if (self.currentReservationObj == null) {
         self.$alert("当前无有效预约");
@@ -518,32 +551,33 @@ export default {
         } else {
           // 要post的数据
           const delayInfo = { startTime, endTime, seat, date, token };
-          
+
           // 先取消当前预约
-          if(await self.cancelCurrentReservation(self.currentReservationObj.id)){
+          if (
+            await self.cancelCurrentReservation(self.currentReservationObj.id)
+          ) {
             // 用delayInfo去预约今天
-            if(await self.reserveToday(delayInfo)){
+            if (await self.reserveToday(delayInfo)) {
               // 预约今天成功
               await self.getCurrentReservation(); // 更新当前预约obj和str
-              self.$alert('延后成功');
+              self.$alert("延后成功");
               self.freeze = false;
             } else {
               // 预约今天失败
-              self.$alert("当前预约已经取消，但再次预约失败，请手动预约",'延后失败');
+              self.$alert(
+                "当前预约已经取消，但再次预约失败，请手动预约",
+                "延后失败"
+              );
               self.freeze = false;
             }
-
-          } else {// 取消当前预约失败
-              self.$alert("当前预约取消失败，请稍后再试",'延后失败');
-              self.freeze = false;
+          } else {
+            // 取消当前预约失败
+            self.$alert("当前预约取消失败，请稍后再试", "延后失败");
+            self.freeze = false;
           }
         }
-
       }
-    },
-
-
-
+    }
   }
 };
 </script>
