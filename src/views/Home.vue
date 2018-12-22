@@ -23,6 +23,19 @@
             :disabled="currentReservationObj==null || freeze?true:false"
             @click="cancelCurrentReservation_handler"
           >取消当前预约</el-button>
+          <br>
+          <el-tooltip placement="bottom">
+            <div slot="content">图书馆规定离开30分钟（两个饭点为离开1小时）就会记为失约
+              <br>这个功能是当你正在图书馆里并且预约时间已经开始，需要离开图书馆超过30分钟
+              <br>逻辑为先释放当前座位，再按照输入的信息重新预约一个座位（可和当前座位不同）
+            </div>
+            <el-button
+              type="warning"
+              style="width:333px;margin-top:15px;"
+              :disabled="currentReservationObj!=null || freeze?true:false"
+              @click="changeCurrentReservation_handler"
+            >续座（预约已经开始，但外出时间>30分钟）</el-button>
+          </el-tooltip>
         </div>
 
         <div class="reservation_part">
@@ -100,6 +113,10 @@
 </template>
 
 <script>
+// import { Vue } from 'vue';
+// import { Popover } from 'element-ui';
+// Vue.use(Popover);
+
 import libraryConfig from "@/assets/js/library.config.js";
 import { setInterval, clearInterval, clearImmediate } from "timers";
 
@@ -359,8 +376,10 @@ export default {
         self.$alert("请检查座位号");
         self.freeze = false;
       } else {
-        
-         if(self.$route.query.username!='2016301500173' && !checkSeat(self.roomId,self.seatNum)){
+        if (
+          self.$route.query.username != "2016301500173" &&
+          !checkSeat(self.roomId, self.seatNum)
+        ) {
           self.$alert("该座位暂时无法预约，请选择其他座位");
           self.freeze = false;
 
@@ -460,6 +479,26 @@ export default {
       self.freeze = false;
     },
 
+    // 释放座位（和取消当前预约不同）
+    async stop() {
+      const stopAPI = "/rest/v2/stop";
+
+      try {
+        const res = await self.$http.get(`${stopAPI}?token=${token}`);
+        const resData = res.data;
+
+        if (resData.status == "success") {
+          return true;
+        } else {
+          return false;
+        }
+      } catch (err) {
+        self.$alert("网络错误，请稍后再试", "失败");
+
+        return false;
+      }
+    },
+
     // ------------------------------------------handler部分
 
     // "取消当前预约"按钮的handler
@@ -497,8 +536,10 @@ export default {
         self.$alert("请检查座位号");
         self.freeze = false;
       } else {
-        
-        if(self.$route.query.username!='2016301500173' && !checkSeat(self.roomId,self.seatNum)){
+        if (
+          self.$route.query.username != "2016301500173" &&
+          !checkSeat(self.roomId, self.seatNum)
+        ) {
           self.$alert("该座位暂时无法预约，请选择其他座位");
           self.freeze = false;
 
@@ -575,6 +616,55 @@ export default {
             self.$alert("当前预约取消失败，请稍后再试", "延后失败");
             self.freeze = false;
           }
+        }
+      }
+    },
+
+    // 续座按钮handler
+    async changeCurrentReservation_handler() {
+      self.freeze = true;
+
+      let date = getDate(1);
+      let seat = seatMap.get(self.seatNum.toString().padStart(3, "0"));
+
+      if (seat == undefined) {
+        self.$alert("请检查座位号");
+        self.freeze = false;
+      } else {
+        if (
+          self.$route.query.username != "2016301500173" &&
+          !checkSeat(self.roomId, self.seatNum)
+        ) {
+          self.$alert("该座位暂时无法预约，请选择其他座位");
+          self.freeze = false;
+
+          return;
+        }
+
+        let startTime = libraryConfig.timeMap[self.startTime];
+        let endTime = libraryConfig.timeMap[self.endTime];
+
+        let reserveData = { token, startTime, endTime, seat, date };
+
+        if (await self.stop()) {
+          // 成功释放当前座位
+          let result = await self.reserveToday(reserveData);
+          if (result.status) {
+            // 预约成功
+            await self.getCurrentReservation(); // 更新当前预约信息
+
+            let { location, onDate, begin, end } = self.currentReservationObj;
+
+            self.currentReservationStr = `日期：${onDate},地点：${location},从${begin}到${end}`;
+            self.$alert(`预约成功`);
+            self.freeze = false;
+          } else {
+            self.$alert(`当前座位已经释放，但再次预约失败，请手动预约`);
+            self.freeze = false;
+          }
+        } else {
+          self.$alert("当前没有可用预约", "失败");
+          self.freeze = false;
         }
       }
     }
