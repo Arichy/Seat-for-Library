@@ -32,7 +32,7 @@
             <el-button
               type="warning"
               style="width:333px;margin-top:15px;"
-              :disabled="currentReservationObj!=null || freeze?true:false"
+              :disabled="currentReservationObj==null || freeze?true:false"
               @click="changeCurrentReservation_handler"
             >续座（预约已经开始，但外出时间>30分钟）</el-button>
           </el-tooltip>
