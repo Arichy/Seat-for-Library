@@ -122,7 +122,7 @@ body,
   // background-repeat: no-repeat;
   // background-size: 100% 100%;
   // background-color: red;
-  height: 100%;
+  min-height: 100%;
 
   .el-header {
     // height: 100% !important;
