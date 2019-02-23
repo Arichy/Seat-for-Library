@@ -228,6 +228,8 @@ export default {
 
       try {
         const res = await self.$http.get(currentReservationAPI);
+        console.log(res);
+        
         const resData = res.data;
 
         console.log(resData);
@@ -246,6 +248,8 @@ export default {
           //查看是否明天有预约
           const getReservationHistoryAPI = `/rest/v2/history/1/10?token=${token}`;
           const res = await self.$http.get(getReservationHistoryAPI);
+          console.log(res);
+          
           const resData = res.data;
 
           if (resData.status == "success") {
@@ -408,7 +412,7 @@ export default {
         startGetSeatTime.setMinutes(minute);
         startGetSeatTime.setSeconds(second);
 
-        // 每5秒检测一次当前时间，如果超过了10点44分40秒，就开始抢座位
+        // 每5秒检测一次当前时间，如果超过了10点45分00秒，就开始抢座位
         self.timeCheckTimer = setInterval(() => {
           let now = new Date();
           if (now.getTime() >= startGetSeatTime.getTime()) {
@@ -463,13 +467,15 @@ export default {
                 self.freeze = false;
                 // self.$alert("网络错误，请稍后再试");
               }
-            }, 500);
+            }, 10000);
           } else {
             // 还没到时间
             self.consoleInfo = `当前时间:${now.getHours()}点${now.getMinutes()}分${now.getSeconds()}秒`;
             console.log(self.consoleInfo);
           }
         }, 5000);
+
+
       }
     },
 
